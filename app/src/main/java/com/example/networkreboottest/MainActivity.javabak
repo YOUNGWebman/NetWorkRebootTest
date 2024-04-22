@@ -1,0 +1,467 @@
+package com.example.networkreboottest;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.Bundle;
+import androidx.appcompat.app.AppCompatActivity;
+
+
+import android.content.IntentFilter;
+import android.os.Handler;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.TextView;
+
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.Collections;
+import java.util.List;
+import android.os.Looper;
+
+
+import android.content.SharedPreferences;
+
+
+
+public class MainActivity extends AppCompatActivity {
+
+    private SharedPreferences sharedPreferences;
+    private SharedPreferences.Editor editor;
+    private static final String TAG = "MainActivity";
+    private TextView wifiStatusTextView;
+    private TextView eth0StatusTextView;
+    private TextView eth1StatusTextView;
+    private TextView eth2StatusTextView;
+    private TextView t4gStatusTextView;
+    private TextView tw4gStatusTextView;
+    private TextView t5gStatusTextView;
+    private boolean wifi_flag ;
+    private boolean eth_flag ;
+    private boolean t4g_flag ;
+    private boolean t5g_flag ;
+    private Handler handler = new Handler();
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+
+        setContentView(R.layout.activity_main);
+        IntentFilter filter = new IntentFilter();
+
+
+        wifiStatusTextView = findViewById(R.id.wifi_status_text_view);
+        eth0StatusTextView = findViewById(R.id.eth0_status_text_view);
+        eth1StatusTextView = findViewById(R.id.eth1_status_text_view);
+        eth2StatusTextView = findViewById(R.id.eth2_status_text_view);
+        t4gStatusTextView = findViewById(R.id.usb0_status_text_view);
+        tw4gStatusTextView = findViewById(R.id.wwan0_status_text_view);
+        t5gStatusTextView = findViewById(R.id.test_5g_status_text_view);
+
+
+        // 初始化 SharedPreferences 和 Editor
+        sharedPreferences = getSharedPreferences("MySharedPref", MODE_PRIVATE);
+        editor = sharedPreferences.edit();
+
+
+        Button rebootButton = findViewById(R.id.start_reboot_button);
+        rebootButton.setEnabled(getButtonState("my_button_state"));
+        rebootButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                rebootButton.setEnabled(false);
+                setSystemProperty("network_reboot_test", "1");
+                saveButtonState("my_button_state", false);
+                Log.d(TAG, "already  action!!!" );
+
+            }
+        });
+        Button stopButton = findViewById(R.id.stop_reboot_button);
+        stopButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                rebootButton.setEnabled(true);
+                saveButtonState("my_button_state", true);
+            setSystemProperty("network_reboot_test" , "0");
+            }
+        });
+
+
+        if(!getButtonState("my_button_state"))
+        {
+            setSystemProperty("network_reboot_test", "1");
+            Log.d(TAG, "already  action!!!" );
+
+        }
+
+
+
+
+        Handler handler = new Handler(Looper.getMainLooper());
+
+        CheckBox wifi_reboot = findViewById(R.id.wifi_Box);
+        wifi_reboot.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (wifi_reboot.isChecked()) {
+                    // 如果复选框被选中
+                    wifi_flag = true;
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            // 在这里执行耗时的操作
+                            while (wifi_flag) {
+                                final String Wifi_status_Str = getSystemProperty("rp_wifi_state");
+
+                                // 操作完成后，将结果传回主线程
+                                handler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        // 在这里更新UI
+                                        Log.d(TAG, "wifi status  " + Wifi_status_Str);
+                                        if (Wifi_status_Str != null && !Wifi_status_Str.isEmpty()) {
+                                            wifiStatusTextView.setText("wifi状态：" + Wifi_status_Str);
+                                        }
+                                    }
+                                });
+                                try {
+                                    Thread.sleep(1000); // 每次检查之间延迟1秒
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    }).start();
+                } else {
+                    // 如果复选框未被选中
+                    wifi_flag = false;
+                    wifiStatusTextView.setText("wifi状态：未知");
+                }
+            }
+        });
+
+
+
+        if(!wifi_reboot.isChecked())
+        {
+
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    // 在这里执行耗时的操作
+                        while (wifi_flag)
+                        {
+                           final String Wifi_status_Str = getSystemProperty("rp_wifi_state");
+
+                    // 操作完成后，将结果传回主线程
+
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                // 在这里更新UI
+
+                                Log.d(TAG, "wifi status  " + Wifi_status_Str);
+                                if (Wifi_status_Str != null && !Wifi_status_Str.isEmpty()) {
+                                    wifiStatusTextView.setText("wifi状态：" + Wifi_status_Str);
+                                }
+                            }
+                        });
+                        }
+                }
+            }).start();
+        }
+
+
+
+        CheckBox eth_reboot = findViewById(R.id.eth_Box);
+        eth_reboot.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                if (eth_reboot.isChecked()) {
+                    // 如果复选框被选中
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            // 在这里执行耗时的操作
+                            while (true){
+                                final String eth0_status_Str = getSystemProperty("rp_eth0_state");
+                                final   String eth1_status_Str = getSystemProperty("rp_eth1_state");
+                                final String eth2_status_Str = getSystemProperty("rp_eth2_state");
+
+                                // 操作完成后，将结果传回主线程
+
+                                handler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        // 在这里更新UI
+
+                                        eth0StatusTextView.setText("eth0状态：" + eth0_status_Str);
+                                        eth1StatusTextView.setText("eth1状态：" + eth1_status_Str);
+                                        eth2StatusTextView.setText("eth2状态：" + eth2_status_Str);
+                                    }
+                                });  // 每次检查之间延迟0.5秒
+                            }
+                        }
+                    }).start();
+                } else {
+                    // 如果复选框未被选中
+                    eth0StatusTextView.setText("eth0状态：未知");
+                    eth1StatusTextView.setText("eth1状态：未知");
+                    eth2StatusTextView.setText("eth2状态：未知");
+                    eth_flag = false;
+
+                }
+
+
+
+            }
+        });
+
+
+        if(!eth_reboot.isChecked())
+        {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    // 在这里执行耗时的操作
+                       while (eth_flag){
+                          final String eth0_status_Str = getSystemProperty("rp_eth0_state");
+                         final   String eth1_status_Str = getSystemProperty("rp_eth1_state");
+                          final String eth2_status_Str = getSystemProperty("rp_eth2_state");
+
+                    // 操作完成后，将结果传回主线程
+
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                // 在这里更新UI
+
+                                eth0StatusTextView.setText("eth0状态：" + eth0_status_Str);
+                                eth1StatusTextView.setText("eth1状态：" + eth1_status_Str);
+                                eth2StatusTextView.setText("eth2状态：" + eth2_status_Str);
+                            }
+                        });  // 每次检查之间延迟0.5秒
+                       }
+                }
+            }).start();
+        }
+
+        CheckBox test_4G_reboot = findViewById(R.id.test_4G_box);
+        test_4G_reboot.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // 在这里处理点击事件
+                if (test_4G_reboot.isChecked()) {
+                    // 如果复选框被选中
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            // 在这里执行耗时的操作
+                            while (true){
+                                final String test_4G_status_Str = getSystemProperty("rp_usb0_state");
+                                final String test_w4G_status_Str = getSystemProperty("rp_wwan0_state");
+
+                                // 操作完成后，将结果传回主线程
+
+                                handler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        // 在这里更新UI
+
+                                        t4gStatusTextView.setText("4G状态（USB0）：" + test_4G_status_Str);
+                                        tw4gStatusTextView.setText("4G状态（WWAN0）：" + test_w4G_status_Str);
+                                    }
+                                });  // 每次检查之间延迟3秒
+                            }
+                        }
+                    }).start();
+                } else {
+                    // 如果复选框未被选中
+                    t4gStatusTextView.setText("4G状态（USB0）：未知");
+                    tw4gStatusTextView.setText("4G状态（WWAN0）：未知");
+                    t4g_flag =false;
+                }
+
+            }
+        });
+
+        if(!test_4G_reboot.isChecked())
+        {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    // 在这里执行耗时的操作
+            while (t4g_flag){
+               final String test_4G_status_Str = getSystemProperty("rp_usb0_state");
+                final String test_w4G_status_Str = getSystemProperty("rp_wwan0_state");
+
+                    // 操作完成后，将结果传回主线程
+
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                // 在这里更新UI
+
+                                t4gStatusTextView.setText("4G状态（USB0）：" + test_4G_status_Str);
+                                tw4gStatusTextView.setText("4G状态（WWAN0）：" + test_w4G_status_Str);
+                            }
+                        });  // 每次检查之间延迟3秒
+            }
+                }
+            }).start();
+        }
+
+        CheckBox test_5G_reboot = findViewById(R.id.test_5G_Box);
+        test_5G_reboot.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // 在这里处理点击事件
+                if (test_5G_reboot.isChecked()) {
+                    // 如果复选框被选中
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            // 在这里执行耗时的操作
+                            while (true){
+                                final String test_5G_status_Str = getSystemProperty("rp_rmnet_state");
+
+                                // 操作完成后，将结果传回主线程
+
+                                handler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        // 在这里更新UI
+
+                                        t5gStatusTextView.setText("5G状态：" + test_5G_status_Str);
+                                    }
+                                });
+                            }
+                        }
+                    }).start();
+                } else {
+                    // 如果复选框未被选中
+                    t5gStatusTextView.setText("5G状态：未知");
+                    t5g_flag = false;
+                }
+
+
+            }
+        });
+
+
+
+        if(!test_5G_reboot.isChecked())
+        {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    // 在这里执行耗时的操作
+                    while (t5g_flag){
+                        final String test_5G_status_Str = getSystemProperty("rp_rmnet_state");
+
+                        // 操作完成后，将结果传回主线程
+
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                // 在这里更新UI
+
+                                t5gStatusTextView.setText("5G状态：" + test_5G_status_Str);
+                            }
+                        });
+                    }
+                }
+            }).start();
+        }
+
+
+        // 设置复选框的状态
+        wifi_reboot.setChecked(getCheckBoxState("wifi_Box"));
+        eth_reboot.setChecked(getCheckBoxState("eth_Box"));
+        test_4G_reboot.setChecked(getCheckBoxState("test_4G_Box"));
+        test_5G_reboot.setChecked(getCheckBoxState("test_5G_Box"));
+
+        // 当复选框的状态改变时，保存新的状态
+        wifi_reboot.setOnCheckedChangeListener((buttonView, isChecked) -> saveCheckBoxState("wifi_Box", isChecked));
+        eth_reboot.setOnCheckedChangeListener((buttonView,isChecked)->saveCheckBoxState("eth_Box" , isChecked));
+        test_4G_reboot.setOnCheckedChangeListener((buttonView,isChecked)->saveCheckBoxState("test_4G_Box" , isChecked));
+        test_5G_reboot.setOnCheckedChangeListener((buttonView,isChecked)->saveCheckBoxState("test_5G_Box" , isChecked));
+
+
+    }
+
+
+
+
+    private String getSystemProperty(String propertyName) {
+        Process process = null;
+        BufferedReader reader = null;
+        try {
+            process = new ProcessBuilder("getprop", propertyName).start();
+            reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            return reader.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (process != null) {
+                process.destroy();
+            }
+        }
+    }
+
+    private void setSystemProperty(String propertyName, String propertyValue) {
+        Process process = null;
+        try {
+            process = new ProcessBuilder("setprop", propertyName, propertyValue).start();
+            process.waitFor();
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            if (process != null) {
+                process.destroy();
+            }
+        }
+    }
+
+
+    // 保存复选框的状态
+    private void saveCheckBoxState(String key, boolean isChecked) {
+        editor.putBoolean(key, isChecked);
+        editor.apply();
+    }
+
+    // 获取复选框的状态
+    private boolean getCheckBoxState(String key) {
+        return sharedPreferences.getBoolean(key, false);
+    }
+
+    // 保存 Button 的状态
+    private void saveButtonState(String key, boolean isEnabled) {
+        editor.putBoolean(key, isEnabled);
+        editor.apply();
+    }
+
+    // 获取 Button 的状态
+    private boolean getButtonState(String key) {
+        return sharedPreferences.getBoolean(key, true);  // 默认状态为启用
+    }
+}

@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <CheckBox
+        android:id="@+id/wifi_Box"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="20dp"
+        android:text="wifi" />
+
+    <TextView
+        android:id="@+id/wifi_status_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/wifi_Box"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="20dp"
+        android:text="WIFI_STATUS: "
+        android:textSize="16sp" />
+
+    <CheckBox
+        android:id="@+id/eth_Box"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/wifi_status_text_view"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="20dp"
+        android:text="eth" />
+
+    <TextView
+        android:id="@+id/eth0_status_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/eth_Box"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="20dp"
+        android:text="ETH0_STATUS: "
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/eth1_status_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/eth0_status_text_view"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="20dp"
+        android:text="ETH1_STATUS: "
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/eth2_status_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/eth1_status_text_view"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="20dp"
+        android:text="ETH2_STATUS: "
+        android:textSize="16sp" />
+
+    <CheckBox
+        android:id="@+id/test_4G_box"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="500dp"
+        android:layout_marginTop="20dp"
+        android:text="4G" />
+
+    <TextView
+        android:id="@+id/usb0_status_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/test_4G_box"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="500dp"
+        android:text="USB0_STATUS: "
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/wwan0_status_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/usb0_status_text_view"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="500dp"
+        android:text="WWAN0_STATUS: "
+        android:textSize="16sp" />
+
+
+
+    <CheckBox
+        android:id="@+id/test_5G_Box"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/wwan0_status_text_view"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="500dp"
+        android:text="5G" />
+
+    <TextView
+        android:id="@+id/test_5g_status_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/test_5G_Box"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="500dp"
+        android:text="rmnet: "
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/reboot_count_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/test_5g_status_text_view"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="500dp"
+        android:text="重启次数: "
+        android:textSize="16sp" />
+
+
+
+
+    <Button
+        android:id="@+id/start_reboot_button"
+        android:layout_width="80dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="400dp"
+        android:layout_marginLeft="200dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:text="START REBOOT"
+        android:textSize="8sp" />
+
+
+    <Button
+        android:id="@+id/stop_reboot_button"
+        android:layout_width="80dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="400dp"
+        android:layout_marginLeft="300dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:text="STOP REBOOT"
+        android:textSize="8sp" />
+
+
+
+</RelativeLayout>
