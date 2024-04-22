@@ -1,6 +1,6 @@
 #! /system/bin/sh
 
-sleep 1
+sleep 5
 
 wlan_status=`wpa_cli -i wlan0 status`
 
@@ -17,7 +17,8 @@ else
 fi
 
 echo
-
+while [ true ]; 
+do	
 ping  -I wlan0 -c 1 www.baidu.com
 ping_result=$?
 echo "ping_result $ping_result"
@@ -107,6 +108,21 @@ echo
 
 sleep 1
 
+ping  -I ppp0 -c 1 www.baidu.com
+ping_result=$?
+echo "ping_result $ping_result"
+if [ "$ping_result" == "0" ]; then
+	echo "ppp0 ping success"
+	setprop rp_ppp0_state success
+else
+	echo "ppp0 ping failed"
+	setprop rp_ppp0_state failed
+fi
+
+echo
+
+sleep 1
+
 ping  -I rmnet_mhi0.1 -c 1 www.baidu.com
 ping_result=$?
 echo "ping_result $ping_result"
@@ -117,7 +133,6 @@ else
 	echo "rmnet_mhi0.1 ping failed"
 	setprop rp_rmnet_state failed
 fi
-
 echo
 
 wifi_flag=$(getprop rp_wifi_state)
@@ -128,13 +143,4 @@ wwan0_flag=$(getprop rp_wwan0_state)
 usb0_flag=$(getprop rp_usb0_state)
 rmnet_flag=$(getprop rp_rmnet_state)
 
-if [ $wifi_flag == "success" ] && [ $eth0_flag == "success" ] && [ $eth1_flag == "success" ]; then
-	echo
-	if [ $wwan0_flag == "success" ] || [ $usb0_flag == "success" ] || [ $rmnet_flag == "success" ]; then
-		echo
-		echo "ok"
-		echo
-		sleep 2
-		reboot
-  fi
-fi
+done
