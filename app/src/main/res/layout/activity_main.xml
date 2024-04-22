@@ -28,7 +28,7 @@
         android:layout_below="@id/wifi_status_text_view"
         android:layout_marginTop="20dp"
         android:layout_marginLeft="20dp"
-        android:text="eth" />
+        android:text="eth0" />
 
     <TextView
         android:id="@+id/eth0_status_text_view"
@@ -40,21 +40,39 @@
         android:text="ETH0_STATUS: "
         android:textSize="16sp" />
 
+    <CheckBox
+        android:id="@+id/eth1_Box"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/eth0_status_text_view"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="20dp"
+        android:text="eth1" />
+
     <TextView
         android:id="@+id/eth1_status_text_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/eth0_status_text_view"
+        android:layout_below="@id/eth1_Box"
         android:layout_marginTop="10dp"
         android:layout_marginLeft="20dp"
         android:text="ETH1_STATUS: "
         android:textSize="16sp" />
 
+    <CheckBox
+        android:id="@+id/eth2_Box"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/eth1_status_text_view"
+        android:layout_marginTop="20dp"
+        android:layout_marginLeft="20dp"
+        android:text="eth2" />
+
     <TextView
         android:id="@+id/eth2_status_text_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/eth1_status_text_view"
+        android:layout_below="@id/eth2_Box"
         android:layout_marginTop="10dp"
         android:layout_marginLeft="20dp"
         android:text="ETH2_STATUS: "
@@ -88,13 +106,22 @@
         android:text="WWAN0_STATUS: "
         android:textSize="16sp" />
 
+    <TextView
+        android:id="@+id/ppp0_status_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/wwan0_status_text_view"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="500dp"
+        android:text="PPP0_STATUS: "
+        android:textSize="16sp" />
 
 
     <CheckBox
         android:id="@+id/test_5G_Box"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/wwan0_status_text_view"
+        android:layout_below="@id/ppp0_status_text_view"
         android:layout_marginTop="20dp"
         android:layout_marginLeft="500dp"
         android:text="5G" />
@@ -114,7 +141,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/test_5g_status_text_view"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="145dp"
         android:layout_marginLeft="500dp"
         android:text="重启次数: "
         android:textSize="16sp" />
@@ -127,7 +154,7 @@
         android:layout_width="80dp"
         android:layout_height="50dp"
         android:layout_marginTop="400dp"
-        android:layout_marginLeft="200dp"
+        android:layout_marginLeft="0dp"
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
         android:text="START REBOOT"
@@ -139,7 +166,7 @@
         android:layout_width="80dp"
         android:layout_height="50dp"
         android:layout_marginTop="400dp"
-        android:layout_marginLeft="300dp"
+        android:layout_marginLeft="100dp"
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
         android:text="STOP REBOOT"
