@@ -108,6 +108,8 @@ public class MainActivity extends AppCompatActivity {
                 rebootButton.setEnabled(true);
                 saveButtonState("my_button_state", true);
                 setSystemProperty("network_reboot_test" , "0");
+                resetRebootCount();
+                rebootCountTextView.setText("重启次数：0" );
             }
         });
 
@@ -341,5 +343,12 @@ public class MainActivity extends AppCompatActivity {
     // 获取 Button 的状态
     private boolean getButtonState(String key) {
         return sharedPreferences.getBoolean(key, true);  // 默认状态为启用
+    }
+    // 重置重启次数
+    public void resetRebootCount() {
+        SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
+        SharedPreferences.Editor editor = settings.edit();
+        editor.putInt(REBOOT_COUNT_KEY, 0);
+        editor.apply();
     }
 }
