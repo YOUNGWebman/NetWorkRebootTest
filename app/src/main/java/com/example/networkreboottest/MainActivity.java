@@ -67,11 +67,13 @@ public class MainActivity extends AppCompatActivity {
     private volatile boolean t4g_flag = true;
     private volatile boolean t5g_flag = true;
     private volatile boolean reboot_flag = true;
+    private volatile boolean olReboot_flag = true;
 
     private Handler handler = new Handler();
     private static final String PREFS_NAME = "MyPrefsFile";
     private static final String REBOOT_COUNT_KEY = "rebootCount";
     private SharedPreferences sharedPreferences;
+
 
     private SharedPreferences.Editor editor;
 
@@ -148,29 +150,50 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+
+
+
+        Button onlyReboot = findViewById(R.id.only_reboot_button);
+        onlyReboot.setEnabled(getButtonState("only_button_state"));
+        onlyReboot.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onlyReboot.setEnabled(false);
+                resetRebootCount();
+                rebootCountTextView.setText("重启次数：0" );
+                saveButtonState("only_button_state", false);
+                // 创建一个新的 Handler 对象
+                Handler handler = new Handler();
+                // 使用 postDelayed() 方法实现延时调用
+
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        // 在这里调用 checkConditionsAndReboot() 方法
+                        RebootCommand();
+                    }
+                }, 5000);  // 延时 5 秒
+
+
+            }
+        });
+
         Button stopButton = findViewById(R.id.stop_reboot_button);
         stopButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 rebootButton.setEnabled(true);
+                onlyReboot.setEnabled(true);
                 saveButtonState("my_button_state", true);
+                saveButtonState("only_button_state", true);
                 setSystemProperty("network_reboot_test" , "0");
 
                 reboot_flag = false;
+                olReboot_flag = false;
             }
         });
 
-
-       /* if(!getButtonState("my_button_state"))
-        {
-            setSystemProperty("network_reboot_test", "1");
-            Log.d(TAG, "already  action!!!" );
-
-            checkConditionsAndReboot();
-
-        } */
-
-        if(!getButtonState("my_button_state")) {
+        if(!getButtonState("my_button_state") ) {
             setSystemProperty("network_reboot_test", "1");
             Log.d(TAG, "already  action!!!" );
 
@@ -185,6 +208,38 @@ public class MainActivity extends AppCompatActivity {
                 }
             }, 0, 5, TimeUnit.SECONDS);  // 每隔 5 秒执行一次
         }
+
+        if(!getButtonState("only_button_state") ) {
+            try {
+                Thread.sleep(2000);  // 延迟1秒
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            if (olReboot_flag)
+            {
+                // 创建一个新的 ScheduledExecutorService 对象
+                ScheduledExecutorService executorService1 = Executors.newSingleThreadScheduledExecutor();
+                // 使用 scheduleAtFixedRate() 方法实现定时调用
+                executorService1.scheduleAtFixedRate(new Runnable() {
+                    @Override
+                    public void run() {
+                        // 在这里调用 checkConditionsAndReboot() 方法
+                        try {
+                            Thread.sleep(5000);  // 延迟1秒
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        if(olReboot_flag)
+                        {
+
+                        RebootCommand();
+                        }
+                    }
+                }, 0, 5, TimeUnit.SECONDS);  // 每隔 5 秒执行一次
+            }
+
+        }
+
 
 
 
@@ -502,7 +557,7 @@ public class MainActivity extends AppCompatActivity {
         Process processa = null;
         DataOutputStream os = null;
         try {
-            String cmd="reboot";
+            String cmd="sleep 5;reboot";
             processa = Runtime.getRuntime().exec("su"); //切换到root帐号
             os = new DataOutputStream(processa.getOutputStream());
             os.writeBytes(cmd + "\n");
