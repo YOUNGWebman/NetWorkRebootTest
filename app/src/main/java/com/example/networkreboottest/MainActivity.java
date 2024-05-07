@@ -66,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
     private volatile boolean eth2_flag = true;
     private volatile boolean t4g_flag = true;
     private volatile boolean t5g_flag = true;
-    private volatile boolean reboot_flag = true;
+  //  private volatile boolean reboot_flag = true;
     private volatile boolean olReboot_flag = true;
 
     private Handler handler = new Handler();
@@ -76,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     private SharedPreferences.Editor editor;
-
+    File f1= new File("/data/rpRbtest.txt");
 
 
 
@@ -120,6 +120,7 @@ public class MainActivity extends AppCompatActivity {
 
         // 增加重启次数并保存
         SharedPreferences.Editor editor = settings.edit();
+
         editor.putInt(REBOOT_COUNT_KEY, rebootCount + 1);
         editor.apply();
 
@@ -131,7 +132,7 @@ public class MainActivity extends AppCompatActivity {
                 resetRebootCount();
                 rebootCountTextView.setText("重启次数：0" );
                 rebootButton.setEnabled(false);
-                reboot_flag = true;
+
                 setSystemProperty("network_reboot_test", "1");
                 saveButtonState("my_button_state", false);
                 Log.d(TAG, "already  action!!!" );
@@ -144,6 +145,14 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void run() {
                             // 在这里调用 checkConditionsAndReboot() 方法
+                            upgradeRootPermission("/data");
+                            if(!f1.exists())
+                            {runCmd("touch " + f1, 1); }
+                            try {
+                                Thread.sleep(1000);  // 延迟1秒
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                             checkConditionsAndReboot();
                         }
                     }, 5000);  // 延时 5 秒
@@ -169,7 +178,10 @@ public class MainActivity extends AppCompatActivity {
                 handler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
+                        upgradeRootPermission("/data");
                         // 在这里调用 checkConditionsAndReboot() 方法
+                        if(!f1.exists())
+                        { runCmd("touch " + f1, 1);}
                         RebootCommand();
                     }
                 }, 5000);  // 延时 5 秒
@@ -187,8 +199,11 @@ public class MainActivity extends AppCompatActivity {
                 saveButtonState("my_button_state", true);
                 saveButtonState("only_button_state", true);
                 setSystemProperty("network_reboot_test" , "0");
+                if(f1.exists())
+                {      upgradeRootPermission("/data");
+                    runCmd("rm " + f1 , 1);
+                }
 
-                reboot_flag = false;
                 olReboot_flag = false;
             }
         });
@@ -204,6 +219,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void run() {
                     // 在这里调用 checkConditionsAndReboot() 方法
+                    Log.d("RRRRR cmd ", "ready to reboot!!!");
                     checkConditionsAndReboot();
                 }
             }, 0, 5, TimeUnit.SECONDS);  // 每隔 5 秒执行一次
@@ -231,7 +247,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         if(olReboot_flag)
                         {
-
+                            Log.d("RRRRR cmd ", "reboot now!!!");
                         RebootCommand();
                         }
                     }
@@ -549,7 +565,7 @@ public class MainActivity extends AppCompatActivity {
     public void resetRebootCount() {
         SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
         SharedPreferences.Editor editor = settings.edit();
-        editor.putInt(REBOOT_COUNT_KEY, 0);
+        editor.putInt(REBOOT_COUNT_KEY, 1);
         editor.apply();
     }
 
@@ -580,17 +596,99 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-   private void checkConditionsAndReboot() {
-       if (reboot_flag) {
+    public class CmdResult {
+        CmdResult(int exitVal, String output) {
+            this.exitVal = exitVal;
+            this.output = output;
+        }
+        public int exitVal;
+        public String output;
+    }
+    public CmdResult runCmd(String cmd, int timeout) {
+        java.lang.Process process = null;
+        int exitVal = -1;
+        DataOutputStream os = null;
+        BufferedReader reader = null;
+        StringBuilder output = new StringBuilder();
+
+        try {
+            process = Runtime.getRuntime().exec("sh");
+            os = new DataOutputStream(process.getOutputStream());
+            Log.d("RRRRR cmd ", cmd);
+            os.writeBytes(cmd + "\n");
+            os.flush();
+            os.writeBytes("exit\n");
+            os.flush();
+
+            boolean processFinished = process.waitFor(timeout, TimeUnit.SECONDS);
+
+            exitVal = process.exitValue();
+            if (processFinished) {
+                reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    output.append(line);
+                }
+            } else {
+                process.destroyForcibly();
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (os != null) os.close();
+                if (reader != null) reader.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            if (process != null) process.destroy();
+        }
+
+        return new CmdResult(exitVal, output.toString());
+    }
+
+
+    private void checkConditionsAndReboot() {
+       if (f1.exists()) {
+           Log.d("RRRRR cmd ", "ready to reboot!!!");
            if ((!wifi_reboot.isChecked() || "success".equals(getSystemProperty("rp_wifi_state"))) &&
                    (!eth_reboot.isChecked() || "success".equals(getSystemProperty("rp_eth0_state"))) &&
                    (!eth1_reboot.isChecked() || "success".equals(getSystemProperty("rp_eth1_state"))) &&
                    (!eth2_reboot.isChecked() || "success".equals(getSystemProperty("rp_eth2_state"))) &&
                    (!test_4G_reboot.isChecked() || ("success".equals(getSystemProperty("rp_usb0_state")) || "success".equals(getSystemProperty("rp_wwan0_state")) || "success".equals(getSystemProperty("rp_ppp0_state")))) &&
                    (!test_5G_reboot.isChecked() || "success".equals(getSystemProperty("rp_rmnet_state")))) {
+               Log.d("RRRRR cmd ", "reboot now!!!");
                RebootCommand();
            }
        }
 
    }
+
+    public static boolean upgradeRootPermission(String pkgCodePath) {
+        Process process = null;
+        DataOutputStream os = null;
+        try {
+            String cmd="chmod 777 " + pkgCodePath;
+            process = Runtime.getRuntime().exec("su"); //切换到root帐号
+            os = new DataOutputStream(process.getOutputStream());
+            os.writeBytes(cmd + "\n");
+            os.writeBytes("exit\n");
+            os.flush();
+            process.waitFor();
+        } catch (Exception e) {
+            //  Log.e(TAG, "Error upgrading root permission", e);
+            return false;
+        } finally {
+            try {
+                if (os != null) {
+                    os.close();
+                }
+                process.destroy();
+            } catch (Exception e) {
+                //    Log.e(TAG, "Error closing process", e);
+            }
+        }
+        return true;
+    }
 }
