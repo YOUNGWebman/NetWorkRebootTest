@@ -1,12 +1,15 @@
 package com.example.networkreboottest;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Build;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
 
 import android.content.IntentFilter;
@@ -25,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import android.os.Looper;
@@ -32,7 +36,10 @@ import android.os.PowerManager;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import android.net.Uri;
 
+
+import android.provider.Settings;
 
 
 
@@ -66,13 +73,14 @@ public class MainActivity extends AppCompatActivity {
     private volatile boolean eth2_flag = true;
     private volatile boolean t4g_flag = true;
     private volatile boolean t5g_flag = true;
-  //  private volatile boolean reboot_flag = true;
+    private volatile boolean reboot_flag = true;
     private volatile boolean olReboot_flag = true;
 
     private Handler handler = new Handler();
     private static final String PREFS_NAME = "MyPrefsFile";
     private static final String REBOOT_COUNT_KEY = "rebootCount";
     private SharedPreferences sharedPreferences;
+    private final int REQUEST_PERMISSION_CODE = 1008;
 
 
     private SharedPreferences.Editor editor;
@@ -87,6 +95,18 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (!Settings.canDrawOverlays(this)) {
+                // 应用没有获取“显示在其他应用上层”的权限
+                requestWriteSettings();
+                Log.d(TAG, "Successfully upgraded  permission");
+            } else {
+                // 应用已经获取了“显示在其他应用上层”的权限
+                Log.d(TAG, "already upgraded  permission");
+            }
+        }
+
+        setSystemProperty("network_reboot_test", "1");
         wifiStatusTextView = findViewById(R.id.wifi_status_text_view);
         eth0StatusTextView = findViewById(R.id.eth0_status_text_view);
         eth1StatusTextView = findViewById(R.id.eth1_status_text_view);
@@ -129,18 +149,18 @@ public class MainActivity extends AppCompatActivity {
         rebootButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                rebootButton.setEnabled(false);
+                reboot_flag = true;
+                setSystemProperty("network_reboot_test", "0");
+                setSystemProperty("network_reboot_test", "1");
                 resetRebootCount();
                 rebootCountTextView.setText("重启次数：0" );
-                rebootButton.setEnabled(false);
-
-                setSystemProperty("network_reboot_test", "1");
                 saveButtonState("my_button_state", false);
-                Log.d(TAG, "already  action!!!" );
 
+                Log.d(TAG, "already  action!!!" );
                     // 创建一个新的 Handler 对象
                     Handler handler = new Handler();
                     // 使用 postDelayed() 方法实现延时调用
-
                     handler.postDelayed(new Runnable() {
                         @Override
                         public void run() {
@@ -149,13 +169,13 @@ public class MainActivity extends AppCompatActivity {
                             if(!f1.exists())
                             {runCmd("touch " + f1, 1); }
                             try {
-                                Thread.sleep(1000);  // 延迟1秒
+                                Thread.sleep(2000);  // 延迟2秒
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
                             checkConditionsAndReboot();
                         }
-                    }, 5000);  // 延时 5 秒
+                    }, 3000);  // 延时 3 秒
 
             }
         });
@@ -174,7 +194,6 @@ public class MainActivity extends AppCompatActivity {
                 // 创建一个新的 Handler 对象
                 Handler handler = new Handler();
                 // 使用 postDelayed() 方法实现延时调用
-
                 handler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -182,6 +201,11 @@ public class MainActivity extends AppCompatActivity {
                         // 在这里调用 checkConditionsAndReboot() 方法
                         if(!f1.exists())
                         { runCmd("touch " + f1, 1);}
+                        try {
+                            Thread.sleep(2000);  // 延迟1秒
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                         RebootCommand();
                     }
                 }, 5000);  // 延时 5 秒
@@ -203,12 +227,14 @@ public class MainActivity extends AppCompatActivity {
                 {      upgradeRootPermission("/data");
                     runCmd("rm " + f1 , 1);
                 }
-
+                reboot_flag = false;
                 olReboot_flag = false;
             }
         });
 
         if(!getButtonState("my_button_state") ) {
+            reboot_flag = true;
+              setSystemProperty("network_reboot_test", "0");
             setSystemProperty("network_reboot_test", "1");
             Log.d(TAG, "already  action!!!" );
 
@@ -239,7 +265,6 @@ public class MainActivity extends AppCompatActivity {
                 executorService1.scheduleAtFixedRate(new Runnable() {
                     @Override
                     public void run() {
-                        // 在这里调用 checkConditionsAndReboot() 方法
                         try {
                             Thread.sleep(5000);  // 延迟1秒
                         } catch (InterruptedException e) {
@@ -650,20 +675,41 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void checkConditionsAndReboot() {
-       if (f1.exists()) {
-           Log.d("RRRRR cmd ", "ready to reboot!!!");
-           if ((!wifi_reboot.isChecked() || "success".equals(getSystemProperty("rp_wifi_state"))) &&
-                   (!eth_reboot.isChecked() || "success".equals(getSystemProperty("rp_eth0_state"))) &&
-                   (!eth1_reboot.isChecked() || "success".equals(getSystemProperty("rp_eth1_state"))) &&
-                   (!eth2_reboot.isChecked() || "success".equals(getSystemProperty("rp_eth2_state"))) &&
-                   (!test_4G_reboot.isChecked() || ("success".equals(getSystemProperty("rp_usb0_state")) || "success".equals(getSystemProperty("rp_wwan0_state")) || "success".equals(getSystemProperty("rp_ppp0_state")))) &&
-                   (!test_5G_reboot.isChecked() || "success".equals(getSystemProperty("rp_rmnet_state")))) {
-               Log.d("RRRRR cmd ", "reboot now!!!");
-               RebootCommand();
-           }
-       }
+        if (f1.exists()) {
+            try {
+                Thread.sleep(1000);  // 延迟2秒
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            while (reboot_flag){
+            Log.d("RRRRR cmd ", "ready to reboot!!!");
+            boolean allCheckedAreSuccess = true;
+            if (wifi_reboot.isChecked() && !"success".equals(getSystemProperty("rp_wifi_state"))) {
+                allCheckedAreSuccess = false;
+            }
+            if (eth_reboot.isChecked() && !"success".equals(getSystemProperty("rp_eth0_state"))) {
+                allCheckedAreSuccess = false;
+            }
+            if (eth1_reboot.isChecked() && !"success".equals(getSystemProperty("rp_eth1_state"))) {
+                allCheckedAreSuccess = false;
+            }
+            if (eth2_reboot.isChecked() && !"success".equals(getSystemProperty("rp_eth2_state"))) {
+                allCheckedAreSuccess = false;
+            }
+            if (test_4G_reboot.isChecked() && !(("success".equals(getSystemProperty("rp_usb0_state")) || "success".equals(getSystemProperty("rp_wwan0_state")) || "success".equals(getSystemProperty("rp_ppp0_state"))))) {
+                allCheckedAreSuccess = false;
+            }
+            if (test_5G_reboot.isChecked() && !"success".equals(getSystemProperty("rp_rmnet_state"))) {
+                allCheckedAreSuccess = false;
+            }
 
-   }
+            if (allCheckedAreSuccess) {
+                Log.d("RRRRR cmd ", "reboot now!!!");
+                RebootCommand();
+            } }
+        }
+    }
+
 
     public static boolean upgradeRootPermission(String pkgCodePath) {
         Process process = null;
@@ -691,4 +737,27 @@ public class MainActivity extends AppCompatActivity {
         }
         return true;
     }
+
+    public void  requestWriteSettings(){
+        Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
+        intent.setData(Uri.parse("package:" + getPackageName()));
+
+        startActivityForResult(intent, REQUEST_PERMISSION_CODE);
+
+    }
+
+     @Override
+    protected  void  onActivityResult(int requestCode, int resultCode, Intent data){
+        super.onActivityResult(requestCode,resultCode,data);
+        if(requestCode == REQUEST_PERMISSION_CODE) {
+
+            if(Settings.System.canWrite(this)){
+
+
+                Log.d("RRRRR cmd ", "onAcitvityResult write settings granted");
+            }
+
+        }
+
+     }
 }
